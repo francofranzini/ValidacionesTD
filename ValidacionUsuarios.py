@@ -21,6 +21,34 @@ def hayMaterialesCargados(obj):
         return True
     return False
 
+def hayPersonalContratado(obj):
+    return obj.x_contratado_ids
+
+def hayPersonalPropio(obj):
+    return obj.x_empleado_ids
+
+def esNoProgramada(obj):
+    return obj.x_es_programada == 'Noprogramada'
+def esProgramada(obj):
+    return obj.x_es_programada == 'Programada'
+
+def tieneFechasCargadas(obj):
+    return obj.date_start or obj.date_end
+
+def fechaBienProgramada(obj):
+    return obj.date_start[:10] >= hoy(dias=+3)
+
+def tipoManoObra(obj):
+    return obj.x_tipo_mano_obra
+
+def hayPersonalCruzado(obj):
+    if esProgramada(obj):
+        if hayPersonalContratado(obj):
+            return True
+    if esNoProgramada(obj):
+        if hayPersonalPropio(obj):
+            return True
+    return False
 
 
 for obj in self:
@@ -41,25 +69,25 @@ for obj in self:
                     mensaje += "Debe estar cargada al menos un material \n"
                     validacion = True
         
-            
-            
         #lo comento pq no puedo cargar las lineas, pero valida bien :)
         #if not obj.x_presupuesto_lineas_ids:
             #mensaje += "Debe estar cargada al menos una linea de Computo de Obra \n"
             #validacion = True
-        if obj.x_es_programada == 'Noprogramada' and (obj.date_start or obj.date_end):
+        if esNoProgramada(obj) and tieneFechasCargadas(obj):
                 mensaje += 'Si la Tarea no es Programada la Fecha de Inicio y Fin debe estar vacias\n'
                 validacion = True
-        if obj.x_es_programada == 'Programada':
-            if not (obj.date_start[:10] >= hoy(dias=+3)):
-                mensaje += 'La fecha de inicio es:' + obj.date_start[:10] + '\n'
-                mensaje += 'Programable a partir del dia:' + hoy(dias=+3) + '\n'
-                mensaje += 'No se puede programar una tarea menor a 3 dias desde hoy \n Debe ser no programada \n'
+        if esProgramada(obj):
+            if not (fechaBienProgramada(obj)):
+                mensaje += 'Programable a partir del dia: ' + hoy(dias=+3) + '\n'
+                mensaje += 'No se puede programar una tarea menor a 3 dias desde hoy \n'
                 validacion = True
-        if obj.x_tipo_mano_obra == 'Propia':
-            if obj.x_contratado_ids:
-                mensaje += 'Mano de obra propia, no debe haber personal contratado\n'
-                validacion = True
+
+        if hayPersonalCruzado(obj):
+            mensaje += 'No debe haber personal contratado \n' if esProgramada(obj) else 'No debe haber personal propio \n'
+        
+        
+        
+        if tipoManoObra(obj) == 'Propia':
             if not obj.x_empleado_ids:
                 mensaje += 'Debe ingresar el Personal Asociado\n'
                 validacion = True
