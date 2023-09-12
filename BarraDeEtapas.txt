@@ -1,2 +1,4 @@
 El cambio en el comportamiento de la barra de etapas en tareas lo logramos a partir de la edicion del
 formulario de vista heredado de las tareas 'Vista Transdatos' quitandole el atributo 'clickable = true'
+
+Editar formulario de vista en tarea -> Vistas Heredadas -> Vista de Tareas Heredadas -> Vistas Heredadas -> Vistas de Transdatos
