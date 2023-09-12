@@ -43,9 +43,6 @@ def tieneFechasCargadas(obj):
 def fechaBienProgramada(obj):
     return obj.date_start[:10] >= hoy(dias=+3)
 
-def tipoManoObra(obj):
-    return obj.x_tipo_mano_obra
-
 def hayPersonalCruzado(obj):
     if manoObraPropia(obj):
         if hayPersonalContratado(obj):
@@ -55,10 +52,26 @@ def hayPersonalCruzado(obj):
             return True
     return False
 
-
+def responsablesEnPersonal(obj):
+    return len(obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_responsable', '=', True)]))
+def horasTotalesEnPersonal(obj):
+    return obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_hs_totales', '>', 0)])
+def fechasEnContratados(obj):
+    return obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '!=', None)]) or obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_hasta', '!=', None)])
+def sinAmbasFechasEnContratados(obj):
+    return obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '=', None)]) or obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_hasta', '=', None)])
+def importesEnContratados(obj):
+    return obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_importe', '!=', 0)])
+def horasPropiasEjecutadas(obj):
+    return obj.x_hs_totales_ejec_mo_propia
+def horasContratadasEjecutadas(obj):
+    return obj.x_hs_totales_ejec_mo_contratada
 for obj in self:
 
+    #Costo de Area:
+    #
     if isAdmin(usuario):
+        validacion = False
         continue
     
     validacion = False
@@ -88,16 +101,17 @@ for obj in self:
                 validacion = True
 
         if hayPersonalCruzado(obj):
-            mensaje += 'No debe haber personal contratado \n' if esProgramada(obj) else 'No debe haber personal propio \n'
+            validacion = True
+            mensaje += 'No debe haber personal contratado \n' if manoObraPropia(obj) else 'No debe haber personal propio \n'
         
         
         
-        if tipoManoObra(obj) == 'Propia':
-            if not obj.x_empleado_ids:
+        if manoObraPropia(obj):
+            if not hayPersonalPropio(obj):
                 mensaje += 'Debe ingresar el Personal Asociado\n'
                 validacion = True
-            if obj.x_es_programada == 'Programada':
-                if not obj.date_start or not obj.date_end or obj.date_start == '' or obj.date_end == '':
+            if esProgramada(obj):
+                if not tieneFechasCargadas(obj) or obj.date_start == '' or obj.date_end == '':
                     mensaje += 'Debe ingresar la Fecha de Inicio y Fin\n'
                     validacion = True
                 else:
@@ -110,46 +124,41 @@ for obj in self:
                         mensaje += 'La fecha de inicio y fin deben ser del mismo dia\n'
                         validacion = True
             
-            if len(obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_responsable', '=', True)])) != 1:
+            if responsablesEnPersonal(obj) != 1:
                 mensaje += 'Debe haber un solo empleado responsable del gasto en el Personal\n'
                 validacion = True
             #Horas vacias en personal propio:
-            if obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_hs_totales', '>', 0)]):
+            if horasTotalesEnPersonal(obj):
                 mensaje += 'El personal no debe tener horas cargadas'
                 validacion = True
             
             
             
-        if obj.x_tipo_mano_obra == 'Contratada':
-            if obj.x_empleado_ids:
-                mensaje += 'Mano de obra contratada, no debe haber personal asociado\n'
-                validacion = True
-            if obj.x_es_programada == 'Programada':
-                if not obj.date_start or not obj.date_end:
+        if manoObraContratada(obj):
+            if esProgramada(obj):
+                if not tieneFechasCargadas(obj):
                     mensaje += 'Debe ingresar la Fecha de Inicio y Fin\n'
                     validacion = True
-            if obj.x_es_programada =='Noprogramada' and (obj.date_start or obj.date_end):
+            if esNoProgramada(obj) and tieneFechasCargadas(obj):
                 mensaje += 'Si la Tarea no es Programada la Fecha de Inicio y Fin debe estar vacias\n'
                 validacion = True
-            if not obj.x_contratado_ids:
+            if not hayPersonalContratado(obj):
                 mensaje += 'Debe ingresar el Personal Contratado\n'
                 validacion = True
         #Fechas desde/hasta vacias en personal Contratado:
-            if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '!=', None)]) or obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_hasta', '!=', None)]):
-                
+            if fechasEnContratados(obj):
                 mensaje += 'El personal contratado no debe tener fechas cargadas'
                 validacion = True
-                
-            if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_importe', '!=', 0)]):
+            if importesEnContratados(obj):
                 mensaje += 'El personal contratado no debe tener importes cargados'
                 validacion = True
     #Entra a Esperando Ejecucion (PROG)
     if obj.stage_id.codigo == 'EJEC':
-        if obj.x_es_programada == 'Programada' and hoy() != obj.date_start[:10]:
+        if esProgramada(obj) and hoy() != obj.date_start[:10]:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
         
-        if obj.x_es_programada == 'Noprogramada' and hoy() != obj.x_fecha_ejecucion[:10]:
+        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10]:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
     # Entra a Finalizada
@@ -158,36 +167,38 @@ for obj in self:
     #
     #
     if obj.stage_id.codigo == 'FIN' and obj.categoria_id.x_aplica_programacion:
-        if not obj.x_no_ejecutada:
+        if hayPersonalCruzado(obj):
+           validacion = True
+           mensaje += 'No debe haber personal contratado \n' if manoObraPropia(obj) else 'No debe haber personal propio \n'
+        if manoObraPropia(obj):
+            if not hayPersonalPropio(obj):
+                mensaje += 'Debe ingresar el Personal Asociado\n'
+                validacion = True
+            if responsablesEnPersonal(obj) != 1:
+                mensaje += 'Debe haber un solo empleado responsable del gasto en el Personal\n'
+                validacion = True
+        if manoObraContratada(obj):
+            if not hayPersonalContratado(obj):
+                mensaje += 'Debe haber personal contratado \n'
+                validacion = True
+        
         #
+        if not obj.x_no_ejecutada:
         # EJECUTADA
         #
             #Si es contratada, que esta cargado Fecha desde/hasta
             # y certificado
-            if obj.x_tipo_mano_obra == 'Contratada':
-                if obj.x_empleado_ids:
-                    mensaje += 'Mano de obra contratada, no debe haber personal asociado\n'
-                    validacion = True
-                if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_importe', '=', 0)]):
+            if manoObraContratada(obj):
+                if not importesEnContratados(obj):
                     mensaje += 'El personal contratado debe tener al menos un certificado cargado \n'
                     validacion = True
-                if (obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '=', None)]) or obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_hasta', '=', None)])):
+                if sinAmbasFechasEnContratados(obj):
                     mensaje += 'Debe ingresar las fechas desde y hasta en el personal contratado\n'
                     validacion = True
             #
             #verificar que no haya personal contratado en Mano Obra propia y que haya personal asociado
             #verifica que haya horas ejecutadas
-            if obj.x_tipo_mano_obra == 'Propia':
-                if obj.x_contratado_ids:
-                    mensaje += 'Mano de obra propia, no debe haber personal contratado\n'
-                    validacion = True
-                if not obj.x_empleado_ids:
-                    mensaje += 'Debe ingresar el Personal Asociado\n'
-                    validacion = True
-                if len(obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_responsable', '=', True)])) != 1:
-                    mensaje += 'Debe haber un solo empleado responsable del gasto en el Personal\n'
-                    validacion = True
-                if not obj.x_hs_totales_ejec_mo_propia:
+                if not horasPropiasEjecutadas(obj):
                     validacion = True
                     mensaje += 'Debe ingresar las horas ejecutadas \n'
             #
@@ -196,30 +207,15 @@ for obj in self:
         # NO EJECUTADA
         #
         else:
-            if obj.x_tipo_mano_obra == 'Propia':
-                if obj.x_contratado_ids:
-                    mensaje += 'Mano de obra propia, no debe haber personal contratado\n'
-                    validacion = True
-                if not obj.x_empleado_ids:
-                    mensaje += 'Debe ingresar el Personal Asociado\n'
-                    validacion = True
-                
-                if len(obj.env['x_tarea_personal'].search([('x_tarea_id', '=', obj.id), ('x_responsable', '=', True)])) != 1:
-                    mensaje += 'Debe haber un solo empleado responsable del gasto en el Personal\n'
-                    validacion = True
-                if obj.x_hs_totales_ejec_mo_propia:
-                    validacion = True
-                    mensaje += 'No debe haber horas ejecutadas \n'
+            if horasPropiasEjecutadas(obj):
+                validacion = True
+                mensaje += 'No debe haber horas ejecutadas \n'
             
-            if obj.x_tipo_mano_obra == 'Contratada':
-                if obj.x_empleado_ids:
-                    mensaje += 'Mano de obra contratada, no debe haber personal asociado\n'
-                    validacion = True
-                
-                if obj.x_hs_totales_ejec_mo_propia > 0:
+            if manoObraContratada(obj):
+                if horasContratadasEjecutadas(obj) > 0:
                     mensaje += 'Tarea no ejecutada, quitar fechas en personal contratado \n'
                     validacion = True
-                if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_importe', '!=', 0)]):
+                if importesEnContratados(obj):
                     mensaje += 'El personal contratado no debe tener certificados cargados \n'
                     validacion = True
                 
