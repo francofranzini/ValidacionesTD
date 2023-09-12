@@ -21,6 +21,11 @@ def hayMaterialesCargados(obj):
         return True
     return False
 
+def manoObraPropia(obj):
+    return obj.x_tipo_mano_obra == 'Propia'
+def manoObraContratada(obj):
+    return obj.x_tipo_mano_obra == 'Contratada'
+
 def hayPersonalContratado(obj):
     return obj.x_contratado_ids
 
@@ -42,10 +47,10 @@ def tipoManoObra(obj):
     return obj.x_tipo_mano_obra
 
 def hayPersonalCruzado(obj):
-    if esProgramada(obj):
+    if manoObraPropia(obj):
         if hayPersonalContratado(obj):
             return True
-    if esNoProgramada(obj):
+    if manoObraContratada(obj):
         if hayPersonalPropio(obj):
             return True
     return False
