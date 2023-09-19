@@ -198,7 +198,8 @@ for obj in self:
             #
             #verificar que no haya personal contratado en Mano Obra propia y que haya personal asociado
             #verifica que haya horas ejecutadas
-                if not horasPropiasEjecutadas(obj):
+            if manoObraPropia(obj):
+                if not horasTotalesEnPersonal(obj):
                     validacion = True
                     mensaje += 'Debe ingresar las horas ejecutadas \n'
             #
