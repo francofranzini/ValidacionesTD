@@ -158,7 +158,12 @@ for obj in self:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
         
-        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10]:
+
+        if esNoProgramada(obj) and hoy() != obj.x_fecha_desde[:10] and manoObraContratada(obj):
+            validacion = True
+            mensaje += 'Debe esperar al dia de ejecucion\n'
+
+        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10] and manoObraPropia(obj):
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
     # Entra a Finalizada
