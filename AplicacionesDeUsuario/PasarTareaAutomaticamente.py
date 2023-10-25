@@ -1,4 +1,4 @@
-tareas = self.env['project.task'].search([('x_contador_etapas', '=', 2), ('date_start', '<=', '%s 23:00:00' % hoy())])
+tareas = self.env['project.task'].search([('x_contador_etapas', '=', 2)])
 for tarea in tareas:
     proxima_etapa = pe = False
     for etapa in tarea.etapa_ids:
@@ -7,5 +7,13 @@ for tarea in tareas:
             break
         if etapa == tarea.stage_id:
             pe = True
-    if proxima_etapa:
-        tarea.stage_id = proxima_etapa
+    try:
+        if proxima_etapa:
+            tarea.stage_id = proxima_etapa
+    except:
+        continue
+        
+
+#Modelo: Project.task
+#Grupos de ejec: RRHH/Emple
+#Planificaciones: 1 vez al dia, hora
