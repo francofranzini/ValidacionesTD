@@ -160,9 +160,21 @@ for obj in self:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
         
-        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10]:
-            validacion = True
-            mensaje += 'Debe esperar al dia de ejecucion\n'
+        #hoy() != obj.x_fecha_ejecucion[:10]
+        if esNoProgramada(obj):
+            if obj.x_fecha_ejecucion:
+                if hoy() != obj.x_fecha_ejecucion[:10]:
+                    mensaje += 'Debe esperar al dia de ejecucion\n'  
+                    validacion = True
+            else:
+                if not fechasEnContratados(obj):
+                    mensaje += 'Debe ingresar fecha desde para entrar a Ejecucion'
+                    validacion = True
+                else:
+                    if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '!=', None)])['x_fecha_desde'] > hoy():
+                        mensaje += 'debe esperar a "Fecha desde" \n'
+                        validacion = True
+
     # Entra a Finalizada
     #
     #
