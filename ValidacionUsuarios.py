@@ -70,9 +70,9 @@ for obj in self:
 
     #Costo de Area:
     #
-    if isAdmin(usuario):
-        validacion = False
-        continue
+    #if isAdmin(usuario):
+    #    validacion = False
+    #    continue
     
     validacion = False
     mensaje = ''
@@ -114,15 +114,17 @@ for obj in self:
                 if not tieneFechasCargadas(obj) or obj.date_start == '' or obj.date_end == '':
                     mensaje += 'Debe ingresar la Fecha de Inicio y Fin\n'
                     validacion = True
-                else:
-                    tz = usuario.tz
-                    fecha_start_date = datetime.datetime.strptime(str(obj.date_start), "%Y-%m-%d %H:%M:%S")
-                    fecha_start = pytz.timezone('UTC').localize((fecha_start_date), is_dst=None).astimezone(pytz.timezone(tz)).strftime("%Y-%m-%d %H:%M:%S")
-                    fecha_end_date = datetime.datetime.strptime(str(obj.date_end), "%Y-%m-%d %H:%M:%S")
-                    fecha_end = pytz.timezone('UTC').localize(fecha_end_date, is_dst=None).astimezone(pytz.timezone(tz)).strftime("%Y-%m-%d %H:%M:%S")
-                    if obj.date_start and obj.date_end and fecha_start[:10] != fecha_end[:10]:
-                        mensaje += 'La fecha de inicio y fin deben ser del mismo dia\n'
-                        validacion = True
+                ###
+                #else:
+                #    tz = usuario.tz
+                #    fecha_start_date = datetime.datetime.strptime(str(obj.date_start), "%Y-%m-%d %H:%M:%S")
+                #    fecha_start = pytz.timezone('UTC').localize((fecha_start_date), is_dst=None).astimezone(pytz.timezone(tz)).strftime("%Y-%m-%d %H:%M:%S")
+                #    fecha_end_date = datetime.datetime.strptime(str(obj.date_end), "%Y-%m-%d %H:%M:%S")
+                #    fecha_end = pytz.timezone('UTC').localize(fecha_end_date, is_dst=None).astimezone(pytz.timezone(tz)).strftime("%Y-%m-%d %H:%M:%S")
+                #    if obj.date_start and obj.date_end and fecha_start[:10] != fecha_end[:10]:
+                #        mensaje += 'La fecha de inicio y fin deben ser del mismo dia\n'
+                #        validacion = True
+                ###
             
             if responsablesEnPersonal(obj) != 1:
                 mensaje += 'Debe haber un solo empleado responsable del gasto en el Personal\n'
@@ -158,12 +160,7 @@ for obj in self:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
         
-
-        if esNoProgramada(obj) and hoy() != obj.x_fecha_desde[:10] and manoObraContratada(obj):
-            validacion = True
-            mensaje += 'Debe esperar al dia de ejecucion\n'
-
-        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10] and manoObraPropia(obj):
+        if esNoProgramada(obj) and hoy() != obj.x_fecha_ejecucion[:10]:
             validacion = True
             mensaje += 'Debe esperar al dia de ejecucion\n'
     # Entra a Finalizada
