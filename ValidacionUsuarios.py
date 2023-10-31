@@ -148,8 +148,11 @@ for obj in self:
                 mensaje += 'Debe ingresar el Personal Contratado\n'
                 validacion = True
         #Fechas desde/hasta vacias en personal Contratado:
-            if fechasEnContratados(obj):
-                mensaje += 'El personal contratado no debe tener fechas cargadas'
+            if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_hasta', '!=', None)]):
+                mensaje += 'El personal contratado no debe tener fecha hasta \n'
+                validacion = True
+            if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '=', None)]):
+                mensaje += 'El personal contratado debe tener fecha desde \n'
                 validacion = True
             if importesEnContratados(obj):
                 mensaje += 'El personal contratado no debe tener importes cargados'
@@ -167,13 +170,9 @@ for obj in self:
                     mensaje += 'Debe esperar al dia de ejecucion\n'  
                     validacion = True
             else:
-                if not fechasEnContratados(obj):
-                    mensaje += 'Debe ingresar fecha desde para entrar a Ejecucion'
+                if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '!=', None)])['x_fecha_desde'] > hoy():
+                    mensaje += 'debe esperar a "Fecha desde" \n'
                     validacion = True
-                else:
-                    if obj.env['x_tarea_contratados'].search([('x_tarea_id', '=', obj.id), ('x_fecha_desde', '!=', None)])['x_fecha_desde'] > hoy():
-                        mensaje += 'debe esperar a "Fecha desde" \n'
-                        validacion = True
 
     # Entra a Finalizada
     #
